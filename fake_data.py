@@ -2,6 +2,9 @@
 
 import pandas as pd
 import numpy as np
+from decimal import *
+
+getcontext().prec = 7
 
 
 def items_available(items, item_label, item_dim, max_repeat):
@@ -19,90 +22,145 @@ def items_available(items, item_label, item_dim, max_repeat):
     return t
 
 
-# items_available(dim_analysts, 'supervisor_id', dim_supervisors, 5)
+if __name__ == '__main__':
 
-# %% Dim Supervisors
+    # %% Dim Supervisors
 
+    df_names = pd.read_excel('../pbi-4-business/fakedata/names.xlsx')
 
-df_names = pd.read_excel('../pbi-4-business/fakedata/names.xlsx')
+    supervisor_id = pd.Series(np.arange(1, 4))
+    supervisor_name = pd.Series(df_names.iloc[:3]['name'])
 
-# df_supervisors['supervisor_id'] -> identity 1 to 10
-supervisor_id = pd.Series(np.arange(1, 11))
-supervisor_name = pd.Series(df_names.iloc[:10]['name'])
+    dim_supervisors = pd.DataFrame({'supervisor_id': supervisor_id.values, 'supervisor_name': supervisor_name.values})
 
-dim_supervisors = pd.DataFrame({'supervisor_id': supervisor_id.values
-                                   , 'supervisor_name': supervisor_name.values})
+    # %% Dim Analysts
 
-# %% Dim Analysts
+    analyst_id = pd.Series(np.arange(1, 16))
+    analyst_name = pd.Series(df_names.iloc[5:20]['name'])
 
-# create analyst_id and analyst name
-analyst_id = pd.Series(np.arange(1, 51))
-analyst_name = pd.Series(df_names.iloc[11:61]['name'])
+    dim_analysts = pd.DataFrame({'analyst_id': analyst_id.values,
+                                 'analyst_name': analyst_name.values})
 
-dim_analysts = pd.DataFrame({'analyst_id': analyst_id.values,
-                             'analyst_name': analyst_name.values})
+    dim_analysts['supervisor_id'] = dim_analysts['analyst_id'].map(lambda x: 0)
 
-dim_analysts['supervisor_id'] = dim_analysts['analyst_id'].map(lambda x: 0)
+    # iterate over analysts df and fill random supervisors
+    analyst_range = range(len(dim_analysts.index))
+    for analyst in analyst_range:
+        items_available_list = items_available(dim_analysts, 'supervisor_id', dim_supervisors, 5)
+        random_sup = np.random.choice(items_available_list)
+        dim_analysts.at[analyst, 'supervisor_id'] = random_sup
 
-# iterate over analysts df and fill random supervisors
-analyst_range = range(len(dim_analysts.index))
-for analyst in analyst_range:
-    items_available_list = items_available(dim_analysts, 'supervisor_id', dim_supervisors, 5)
-    random_sup = np.random.choice(items_available_list)
-    dim_analysts.at[analyst, 'supervisor_id'] = random_sup
+    # %% Dim Locations
 
-# %% Dim Locations
+    municipios = pd.read_excel('..\\municipios.xlsx')
+    locations_sample = pd.DataFrame({'location_id': np.random.randint(len(municipios.index), size=10)})
+    dim_locations = locations_sample.merge(municipios,
+                                           how='left',
+                                           left_on='location_id',
+                                           right_index=True)[['location_id', 'nome', 'latitude', 'longitude']]
 
-municipios = pd.read_excel('..\\municipios.xlsx')
-locations_sample = pd.DataFrame({'location_id': np.random.randint(len(municipios.index), size=6)})
-dim_locations = locations_sample.merge(municipios,
-                                       how='left',
-                                       left_on='location_id',
-                                       right_index=True)[['location_id', 'nome', 'latitude', 'longitude']]
+    # %% Dim Clients
 
-# %% Dim Clients
+    client_id = pd.Series(np.arange(1, 51))
+    client_name = pd.Series(df_names.iloc[21:71]['name']).reset_index(drop=True)
 
-# create analyst_id and analyst name
-client_id = pd.Series(np.arange(1, 13))
-client_name = pd.Series(df_names.iloc[62:74]['name'])
+    dim_clients = pd.DataFrame({'client_id': client_id.values,
+                                'client_name': client_name.values})
 
-dim_clients = pd.DataFrame({'client_id': client_id.values,
-                            'client_name': client_name.values})
+    dim_clients['location_id'] = dim_clients['client_id'].map(lambda x: 0)
 
-dim_clients['location_id'] = dim_clients['client_id'].map(lambda x: 0)
+    # iterate over dim clients and fill location ramdomly
+    client_range = range(len(dim_clients.index))
 
-# iterate over dim clients and fill location ramdomly
-client_range = range(len(dim_clients.index))
+    for client in client_range:
+        items_available_list = items_available(dim_clients, 'location_id', dim_locations, 5)
+        random_location = np.random.choice(items_available_list)
+        dim_clients.at[client, 'location_id'] = random_location
 
-for client in client_range:
-    items_available_list = items_available(dim_clients, 'location_id', dim_locations, 2)
-    random_location = np.random.choice(items_available_list)
-    dim_clients.at[client, 'location_id'] = random_location
+    # %% Dim Category
 
-# %% Dim Category
+    category_id = pd.Series(np.arange(1, 5))
+    category_name = pd.Series(['Perifericos', 'Hardware', 'Software', 'Infra'])
 
-category_id = pd.Series(np.arange(1, 5))
-category_name = pd.Series(['Perifericos', 'Hardware', 'Software', 'Infra'])
+    dim_category = pd.DataFrame({'category_id': category_id,
+                                 'category_name': category_name})
 
-dim_category = pd.DataFrame({'category_id': category_id,
-                             'category_name': category_name})
+    # %%  Dim subcategory
 
-# %%  Dim subcategory
+    sub_category_id = pd.Series(np.arange(1, 9))
+    sub_category_name = pd.Series(['Keyboard', 'Headset',
+                                   'Motherboard', 'RAM Memory',
+                                   'Visual Studio', 'Power BI',
+                                   'Chair', 'Desk'])
+    category_id = pd.Series([1, 1, 2, 2, 3, 3, 4, 4])
 
-sub_category_id = pd.Series(np.arange(1, 9))
-sub_category_name = pd.Series(['Keyboard', 'Headset',
-                               'Motherboard', 'RAM Memory',
-                               'Visual Studio', 'Power BI',
-                               'Chair', 'Desk'])
-category_id = pd.Series([1, 1, 2, 2, 3, 3, 4, 4])
+    dim_sub_category = pd.DataFrame({'sub_category_id': sub_category_id,
+                                     'sub_category_name': sub_category_name,
+                                     'category_id': category_id})
 
-dim_sub_category = pd.DataFrame({'sub_category_id': sub_category_id,
-                                 'sub_category_name': sub_category_name,
-                                 'category_id': category_id})
+    # %% fact requests
 
-dim_analysts.to_csv('dim_analyts.csv', index=False)
-dim_supervisors.to_csv('dim_supervisors.csv', index=False)
-dim_clients.to_csv('dim_clients.csv', index=False)
-dim_locations.to_csv('dim_locations.csv', index=False)
-dim_category.to_csv('dim_category.csv', index=False)
-dim_sub_category.to_csv('dim_sub_category.csv', index=False)
+    months = pd.Series(np.arange(1, 13))
+    requests_quantity = []
+    for i in range(len(months)):
+        if i < 7:
+            count_rows = np.random.randint(3800, 4000)
+        else:
+            count_rows = np.random.randint(4100, 4200)
+
+        requests_quantity.append(count_rows)
+
+    month_size = pd.DataFrame({'month': months, 'requests_quantity': requests_quantity})
+
+    # create fact requests
+    fact_requests = pd.DataFrame()
+    month = 1
+    requests_quantity = 3995
+
+    t = pd.DataFrame()
+    t['request_id'] = np.arange(requests_quantity)
+
+    # sub-categoria randomization
+    sub_category_id_list = dim_sub_category['sub_category_id'].to_list()
+    dec_low = Decimal(.2) / 2
+    dec_medium = Decimal(.6) / 2
+    dec_high = Decimal(.2) / 4
+    sub_category_id_p = [dec_low, dec_low, dec_medium, dec_medium, dec_high, dec_high, dec_high, dec_high]
+    t['sub_category_id'] = t['request_id'].map(lambda x: np.random.choice(sub_category_id_list, p=sub_category_id_p))
+
+    # clients randomization
+    localization_id_list = dim_locations['location_id'].to_list()
+
+    dec_low = Decimal(.2) / 4
+    dec_medium = Decimal(.6) / 2
+    dec_high = Decimal(.2) / 4
+    localization_p_list = [dec_low, dec_low, dec_low, dec_low, dec_medium,
+                           dec_medium, dec_high, dec_high, dec_high, dec_high]
+    dim_locations['valor_p'] = localization_p_list
+    dim_clients['valor_p_location'] = dim_clients.merge(dim_locations,
+                                                        how='left',
+                                                        on='location_id')['valor_p'].map(lambda x: x / 5)
+
+    # set clients_id_list
+    client_id_list = dim_clients['client_id'].to_list()
+    client_p_list = dim_clients['valor_p_location'].to_list()
+    t['client_id'] = t['request_id'].map(lambda x: np.random.choice(client_id_list, p=client_p_list))
+
+    # set analysts id lists
+    dec_low = Decimal(.2) / 6
+    dec_medium = Decimal(.2) / 7
+    dec_high = Decimal(.6) / 2
+    analyst_id_list = dim_analysts['analyst_id'].to_list()
+    analyst_p_list = [dec_low, dec_low, dec_low, dec_low, dec_low, dec_low,
+                      dec_medium, dec_medium, dec_medium, dec_medium,
+                      dec_medium, dec_medium, dec_medium, dec_high, dec_high]
+    t['analyst_id'] = t['request_id'].map(lambda x: np.random.choice(analyst_id_list, p=analyst_p_list))
+
+    t.to_csv('fact_requests.csv', index=False)
+    dim_analysts.to_csv('dim_analyts.csv', index=False)
+    dim_supervisors.to_csv('dim_supervisors.csv', index=False)
+    dim_clients.to_csv('dim_clients.csv', index=False)
+    dim_locations.to_csv('dim_locations.csv', index=False)
+    dim_category.to_csv('dim_category.csv', index=False)
+    dim_sub_category.to_csv('dim_sub_category.csv', index=False)
+    # for month, requests_quantity in month_size.itertuples(index=False):
