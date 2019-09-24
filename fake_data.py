@@ -112,55 +112,57 @@ if __name__ == '__main__':
 
     month_size = pd.DataFrame({'month': months, 'requests_quantity': requests_quantity})
 
-    # create fact requests
+    # month = 1
+    # requests_quantity = 3995
+
     fact_requests = pd.DataFrame()
-    month = 1
-    requests_quantity = 3995
+    for month, requests_quantity in month_size.itertuples(index=False):
 
-    t = pd.DataFrame()
-    t['request_id'] = np.arange(requests_quantity)
+        t = pd.DataFrame()
+        t['request_id'] = np.arange(requests_quantity)
 
-    # sub-categoria randomization
-    sub_category_id_list = dim_sub_category['sub_category_id'].to_list()
-    dec_low = Decimal(.2) / 2
-    dec_medium = Decimal(.6) / 2
-    dec_high = Decimal(.2) / 4
-    sub_category_id_p = [dec_low, dec_low, dec_medium, dec_medium, dec_high, dec_high, dec_high, dec_high]
-    t['sub_category_id'] = t['request_id'].map(lambda x: np.random.choice(sub_category_id_list, p=sub_category_id_p))
+        # sub-categoria randomization
+        sub_category_id_list = dim_sub_category['sub_category_id'].to_list()
+        dec_low = Decimal(.2) / 2
+        dec_medium = Decimal(.6) / 2
+        dec_high = Decimal(.2) / 4
+        sub_category_id_p = [dec_low, dec_low, dec_medium, dec_medium, dec_high, dec_high, dec_high, dec_high]
+        t['sub_category_id'] = t['request_id'].map(lambda x: np.random.choice(sub_category_id_list, p=sub_category_id_p))
 
-    # clients randomization
-    localization_id_list = dim_locations['location_id'].to_list()
+        # clients randomization
+        localization_id_list = dim_locations['location_id'].to_list()
 
-    dec_low = Decimal(.2) / 4
-    dec_medium = Decimal(.6) / 2
-    dec_high = Decimal(.2) / 4
-    localization_p_list = [dec_low, dec_low, dec_low, dec_low, dec_medium,
-                           dec_medium, dec_high, dec_high, dec_high, dec_high]
-    dim_locations['valor_p'] = localization_p_list
-    dim_clients['valor_p_location'] = dim_clients.merge(dim_locations,
-                                                        how='left',
-                                                        on='location_id')['valor_p'].map(lambda x: x / 5)
+        dec_low = Decimal(.2) / 4
+        dec_medium = Decimal(.6) / 2
+        dec_high = Decimal(.2) / 4
+        localization_p_list = [dec_low, dec_low, dec_low, dec_low, dec_medium,
+                               dec_medium, dec_high, dec_high, dec_high, dec_high]
+        dim_locations['valor_p'] = localization_p_list
+        dim_clients['valor_p_location'] = dim_clients.merge(dim_locations,
+                                                            how='left',
+                                                            on='location_id')['valor_p'].map(lambda x: x / 5)
 
-    # set clients_id_list
-    client_id_list = dim_clients['client_id'].to_list()
-    client_p_list = dim_clients['valor_p_location'].to_list()
-    t['client_id'] = t['request_id'].map(lambda x: np.random.choice(client_id_list, p=client_p_list))
+        # set clients_id_list
+        client_id_list = dim_clients['client_id'].to_list()
+        client_p_list = dim_clients['valor_p_location'].to_list()
+        t['client_id'] = t['request_id'].map(lambda x: np.random.choice(client_id_list, p=client_p_list))
 
-    # set analysts id lists
-    dec_low = Decimal(.2) / 6
-    dec_medium = Decimal(.2) / 7
-    dec_high = Decimal(.6) / 2
-    analyst_id_list = dim_analysts['analyst_id'].to_list()
-    analyst_p_list = [dec_low, dec_low, dec_low, dec_low, dec_low, dec_low,
-                      dec_medium, dec_medium, dec_medium, dec_medium,
-                      dec_medium, dec_medium, dec_medium, dec_high, dec_high]
-    t['analyst_id'] = t['request_id'].map(lambda x: np.random.choice(analyst_id_list, p=analyst_p_list))
+        # set analysts id lists
+        dec_low = Decimal(.2) / 6
+        dec_medium = Decimal(.2) / 7
+        dec_high = Decimal(.6) / 2
+        analyst_id_list = dim_analysts['analyst_id'].to_list()
+        analyst_p_list = [dec_low, dec_low, dec_low, dec_low, dec_low, dec_low,
+                          dec_medium, dec_medium, dec_medium, dec_medium,
+                          dec_medium, dec_medium, dec_medium, dec_high, dec_high]
+        t['analyst_id'] = t['request_id'].map(lambda x: np.random.choice(analyst_id_list, p=analyst_p_list))
+        t['mes_criacao'] = t['request_id'].map(lambda x: month)
+        fact_requests = pd.concat([fact_requests, t])
 
-    t.to_csv('fact_requests.csv', index=False)
+    fact_requests.to_csv('fact_requests.csv', index=False)
     dim_analysts.to_csv('dim_analyts.csv', index=False)
     dim_supervisors.to_csv('dim_supervisors.csv', index=False)
     dim_clients.to_csv('dim_clients.csv', index=False)
     dim_locations.to_csv('dim_locations.csv', index=False)
     dim_category.to_csv('dim_category.csv', index=False)
     dim_sub_category.to_csv('dim_sub_category.csv', index=False)
-    # for month, requests_quantity in month_size.itertuples(index=False):
