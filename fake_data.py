@@ -3,6 +3,8 @@
 import pandas as pd
 import numpy as np
 from decimal import *
+from calendar import monthrange
+import datetime
 
 getcontext().prec = 7
 
@@ -25,8 +27,8 @@ def items_available(items, item_label, item_dim, max_repeat):
 if __name__ == '__main__':
 
     # %% Dim Supervisors
-
-    df_names = pd.read_excel('../pbi-4-business/fakedata/names.xlsx')
+    folder_path = 'C:\\Users\\a116822\\dev\\fake-data-python\\'
+    df_names = pd.read_excel('{folder}names.xlsx'.format(folder=folder_path))
 
     supervisor_id = pd.Series(np.arange(1, 4))
     supervisor_name = pd.Series(df_names.iloc[:3]['name'])
@@ -52,7 +54,7 @@ if __name__ == '__main__':
 
     # %% Dim Locations
 
-    municipios = pd.read_excel('..\\municipios.xlsx')
+    municipios = pd.read_excel('{folder}municipios.xlsx'.format(folder=folder_path))
     locations_sample = pd.DataFrame({'location_id': np.random.randint(len(municipios.index), size=10)})
     dim_locations = locations_sample.merge(municipios,
                                            how='left',
@@ -100,18 +102,33 @@ if __name__ == '__main__':
 
     # %% fact requests
 
-    months = pd.Series(np.arange(1, 13))
+    def get_rows_per_month(mes):
+        if mes < 7:
+            rand = np.random.randint(3500, 4050)
+        else:
+            rand = np.random.randint(4100, 5000)
+        return rand
+    
+    def build_month_year_date(year, month):
+        return datetime.date(year, month, 1)
+    
+    years_list = [2018, 2019]
+    months = pd.Series([build_month_year_date(x, y) for x in years_list for y in np.arange(1, 13)])
+    
+    
+    
+       
     requests_quantity = []
     for i in range(len(months)):
         if i < 7:
-            count_rows = np.random.randint(3800, 4000)
+            count_rows = np.random.randint(3500, 4050)
         else:
-            count_rows = np.random.randint(4100, 4200)
+            count_rows = np.random.randint(4100, 5000)
 
         requests_quantity.append(count_rows)
 
     month_size = pd.DataFrame({'month': months, 'requests_quantity': requests_quantity})
-
+    month_size['year'] = month_size['month'].map(lambda x: years)
     # month = 1
     # requests_quantity = 3995
 
@@ -127,7 +144,8 @@ if __name__ == '__main__':
         dec_medium = Decimal(.6) / 2
         dec_high = Decimal(.2) / 4
         sub_category_id_p = [dec_low, dec_low, dec_medium, dec_medium, dec_high, dec_high, dec_high, dec_high]
-        t['sub_category_id'] = t['request_id'].map(lambda x: np.random.choice(sub_category_id_list, p=sub_category_id_p))
+        t['sub_category_id'] = t['request_id'].\
+            map(lambda x: np.random.choice(sub_category_id_list, p=sub_category_id_p))
 
         # clients randomization
         localization_id_list = dim_locations['location_id'].to_list()
@@ -158,11 +176,13 @@ if __name__ == '__main__':
         t['analyst_id'] = t['request_id'].map(lambda x: np.random.choice(analyst_id_list, p=analyst_p_list))
         t['mes_criacao'] = t['request_id'].map(lambda x: month)
         fact_requests = pd.concat([fact_requests, t])
-
-    fact_requests.to_csv('fact_requests.csv', index=False)
-    dim_analysts.to_csv('dim_analyts.csv', index=False)
-    dim_supervisors.to_csv('dim_supervisors.csv', index=False)
-    dim_clients.to_csv('dim_clients.csv', index=False)
-    dim_locations.to_csv('dim_locations.csv', index=False)
-    dim_category.to_csv('dim_category.csv', index=False)
-    dim_sub_category.to_csv('dim_sub_category.csv', index=False)
+    
+    folder_path = folder_path + 'result\\'
+    fact_requests.to_csv('{folder}fact_requests.csv'.format(folder=folder_path), index=False)
+    dim_analysts.to_csv('{folder}dim_analysts.csv'.format(folder=folder_path), index=False)
+    dim_supervisors.to_csv('{folder}dim_supervisors.csv'.format(folder=folder_path), index=False)
+    dim_clients.to_csv('{folder}dim_clients.csv'.format(folder=folder_path), index=False)
+    dim_locations.to_csv('{folder}dim_locations.csv'.format(folder=folder_path).format(folder=folder_path),
+                         index=False, encoding='utf-8-sig')
+    dim_category.to_csv('{folder}dim_category.csv'.format(folder=folder_path), index=False)
+    dim_sub_category.to_csv('{folder}dim_sub_category.csv'.format(folder=folder_path), index=False)
