@@ -101,9 +101,9 @@ if __name__ == '__main__':
                                      'category_id': category_id})
 
     # %% fact requests
-
-    def get_rows_per_month(mes):
-        if mes < 7:
+    
+    def get_rows_per_month(date):
+        if date.month < 7:
             rand = np.random.randint(3500, 4050)
         else:
             rand = np.random.randint(4100, 5000)
@@ -114,9 +114,12 @@ if __name__ == '__main__':
     
     years_list = [2018, 2019]
     months = pd.Series([build_month_year_date(x, y) for x in years_list for y in np.arange(1, 13)])
+    rows = pd.Series([get_rows_per_month(x) for x in months])
+    months = pd.Series([str(x.year)+'-'+str(x.month) +'-'+ '1' for x in months])
     
+    df_rows_per_month_year = pd.DataFrame({'month_year': months, 'rows': rows.values})
     
-    
+    pd.DataFrame[{'rows_quantity': rows}]
        
     requests_quantity = []
     for i in range(len(months)):
